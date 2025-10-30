@@ -16,7 +16,10 @@ tax_calculation_client = Anthropic(api_key=api_key)
 
 gaq_error, statistics_dict = check_errors.check_gaq_errors()
 wrong_tax_applied, wrong_tax_calculation = check_errors.check_naq_errors()
-tax_difference = check_errors.check_tax_difference()
+tax_difference, related_dict = check_errors.check_tax_difference()
+
+#Tools for agent
+TAX_RESEARCH_TOOLS = [{"type": "web_search_20250305", "name": "web_search"}]
 
 def agent_gaq_feedback():
     response_gaq = ''
@@ -67,6 +70,10 @@ CONSTRAINTS:
         return response_gaq.content[0].text
     
 
+
+
+# If the research online takes more than one minute, stop the research and reply "i dont know"
+# tools = TAX_RESEARCH_TOOLS,
 def agent_tax_difference_feedback():
     response_tax = ''
 
@@ -75,13 +82,12 @@ def agent_tax_difference_feedback():
         response_tax = tax_estimation_client.messages.create(
             model="claude-sonnet-4-5",        
             max_tokens=300,
-            tools = TAX_RESEARCH_TOOLS,
+            
             messages=[
             {"role": "user",
             "content": f"""
-You are a reconciliation analyst. You are given this dict of rows where NBIM and Custodian have different tax rates. Use web research in order 
-to find information on different tax rates in which the countries the compies operates in:
-{tax_difference}.
+You are a reconciliation analyst. You are given this dict of rows where NBIM and Custodian have different tax rates. {tax_difference}.Use web research in order 
+to find information on different tax rates in which the countries the compies operates in. here is related context from dataset you should use to find out why NBIM has a higher total tax than custody: {related_dict}.
 
 TASK:
 1) Detect and calculate the difference in percentage points (diff_pp = NBIM_rate - Custody_rate).
@@ -150,9 +156,9 @@ def agent_tax_applied_error_feedback():
     if response_tax_applied:
         return response_tax_applied.content[0].text
     
-TAX_RESEARCH_TOOLS = [{"type": "web_search_20250305", "name": "web_search"}]
 
 
+# tools = TAX_RESEARCH_TOOLS
 def wrong_tax_calculated():
     if wrong_tax_calculation:
 

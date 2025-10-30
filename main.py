@@ -4,15 +4,15 @@ import agent_evaluation as ae
 
 st.set_page_config(page_title="Dividend Reconciliation Report", layout="wide")
 
-st.title("📊 Dividend Reconciliation Analysis")
+st.title("Dividend Reconciliation Analysis")
 st.caption("This dashboard shows deviations found between NBIM and Custody dividend bookings.")
 
-# --- 1) Break detection (for telling og meny) --------------------------------
+
 gaq_error = check_errors.check_gaq_errors()[0] if isinstance(check_errors.check_gaq_errors(), tuple) else check_errors.check_gaq_errors()
 naq = check_errors.check_naq_errors()
 wrong_tax_applied = naq[0] if isinstance(naq, tuple) else (naq.get("wrong_tax_applied") if isinstance(naq, dict) else {})
 wrong_tax_calculation = naq[1] if isinstance(naq, tuple) else (naq.get("wrong_tax_calculation") if isinstance(naq, dict) else {})
-tax_difference = check_errors.check_tax_difference()
+tax_difference = check_errors.check_tax_difference()[0] if isinstance(check_errors.check_tax_difference(), tuple) else check_errors.check_tax_difference()
 
 def _count_items(d):
     if not d:

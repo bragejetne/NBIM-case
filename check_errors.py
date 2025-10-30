@@ -21,6 +21,9 @@ nbim_tax_rate = {col: df[col].tolist()}
 col = 'ORGANISATION_NAME'
 nbim_org = {col: df[col].tolist()}
 
+col = 'QUOTATION_CURRENCY'
+nbim_qc = {col: df[col].tolist()}
+
 col = 'GROSS_AMOUNT_QUOTATION'
 nbim_gaq = {col: df[col].tolist()}
 
@@ -35,8 +38,12 @@ nbim_nas = {col: df[col].tolist()}
 
 col = 'DIVIDENDS_PER_SHARE'
 nbim_dps = {col: df[col].tolist()}
+
 col = 'TOTAL_TAX_RATE'
 nbim_ttr = {col: df[col].tolist()}
+
+col = 'LOCALTAX_COST_QUOTATION'
+nbim_ltc = {col: df[col].tolist()}
 
 # Custody dicts
 col = 'GROSS_AMOUNT'
@@ -100,7 +107,7 @@ def check_gaq_errors():
     return wrong_calulations_gaq, statistics_dict
 
 def check_tax_difference():
-     
+    
     nbim_vals = nbim_ttr['TOTAL_TAX_RATE']
     custody_vals = custody_tax_rate['TAX_RATE']
     unequal_tax_dict = {}
@@ -109,9 +116,25 @@ def check_tax_difference():
         if n == c:
             continue
         else:
-            unequal_tax_dict[f'nbim:_{i}'] = [f'tax rate {n}, row {i}, org {nbim_org['ORGANISATION_NAME'][i-1]}']
+            unequal_tax_dict[f'nbim:_{i}'] = [f'tax rate {n}, row {i}']
             unequal_tax_dict[f'custody_{i}'] = [f'tax rate {c}, row {i}']
-    return unequal_tax_dict
+
+        related_dict = {
+            'organisation_name': nbim_org['ORGANISATION_NAME'][i-1],
+            'quotation_currency_nbim': nbim_qc['QUOTATION_CURRENCY'][i-1],
+            'nbim_gross_amount_quotation': nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1],
+            'custody_gross_amount': custody_gaq['GROSS_AMOUNT'][i-1],
+            'localtax_cost_quotation_nbim': nbim_ltc['LOCALTAX_COST_QUOTATION'][i-1],
+            'wthtax_cost_quotation_nbim': nbim_tax_cost['WTHTAX_COST_QUOTATION'][i-1],
+            'wthtax_rate_nbim': nbim_tax_rate['WTHTAX_RATE'][i-1],
+            'net_amount_qoutation_nbim': nbim_net['NET_AMOUNT_QUOTATION'][i-1],
+            'net_amount_qoutation_custody': custody_net['NET_AMOUNT_QC'][i-1]
+            
+
+
+
+        }
+    return unequal_tax_dict, related_dict
 
 def check_naq_errors():
     wrong_tax_calculation = {}
