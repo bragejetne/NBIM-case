@@ -1,10 +1,7 @@
-
 from anthropic import Anthropic
-import importlib
 import check_errors
 import os
 from dotenv import load_dotenv
-from json import dumps
 
 load_dotenv()
 api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -14,8 +11,6 @@ tax_estimation_client = Anthropic(api_key=api_key)
 gaq_error, statistics_dict = check_errors.check_gaq_errors()
 tax_difference, related_dict = check_errors.check_tax_difference()
 
-#Tools for agent
-TAX_RESEARCH_TOOLS = [{"type": "web_search_20250305", "name": "web_search"}]
 
 def agent_gaq_feedback():
     response_gaq = ''

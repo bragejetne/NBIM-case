@@ -17,15 +17,14 @@ def _count_items(d, kind: str | None = None):
     if not d:
         return 0
 
-    # Spesialhåndtering for Tax rate differences (taxdiff):
+    #Special for tax
     if kind == "taxdiff":
         if isinstance(d, dict):
             if {"nbim", "custody"}.issubset(d.keys()):
                 return 1
-            # Nøstet per hendelse
+
             if all(isinstance(v, dict) and {"nbim", "custody"}.issubset(v.keys()) for v in d.values()):
                 return len(d)
-        # Fallback: minst 1 hvis vi ikke forstår strukturen
         return 1
     total = 0
     if isinstance(d, dict):
@@ -33,7 +32,6 @@ def _count_items(d, kind: str | None = None):
             if isinstance(v, list):
                 total += len(v)
             elif isinstance(v, dict):
-                # f.eks. {'nbim': [...], 'custody': [...]}
                 if any(isinstance(x, list) for x in v.values()):
                     total += sum(len(x) if isinstance(x, list) else 1 for x in v.values())
                 else:
@@ -48,11 +46,11 @@ def _count_items(d, kind: str | None = None):
 issues = []
 if gaq_error:
     issues.append({"key": "gaq", "title": "GAQ mismatches (Gross Amount Quotation)",
-                   "subtitle": "Breaks in GAQ = DPS × Nominal", "count": _count_items(gaq_error)})
+                "subtitle": "Breaks in GAQ = DPS × Nominal", "count": _count_items(gaq_error)})
 
 if tax_difference:
     issues.append({"key": "taxdiff", "title": "Tax rate differences",
-                   "subtitle": "NBIM WHT rate ≠ Custody WHT rate", "count": _count_items(tax_difference, kind="taxdiff")})
+                "subtitle": "NBIM WHT rate ≠ Custody WHT rate", "count": _count_items(tax_difference, kind="taxdiff")})
 
 if not issues:
     st.success(" No deviations found. All checks passed.")
@@ -78,21 +76,15 @@ def _render_report(key: str) -> str:
 def _render_priority_report() -> str:
     return pa.agent_priority_feedback()
 
-with st.spinner("Computing analyst reports..."):
-    reports = {it["key"]: _render_report(it["key"]) for it in issues}
-
-
 # Compute everything up-front so both views are instant
 with st.spinner("Computing analyst reports..."):
     reports = {it["key"]: _render_report(it["key"]) for it in issues}
 with st.spinner("Computing priority..."):
     priority_report = _render_priority_report()
 
-# Build readable labels
 labels = [f"{i['title']} • {i['count']} found" for i in issues]
 keys = [i["key"] for i in issues]
 
-# Home "menu" as tabs
 tab_detected, tab_priority = st.tabs([
     "Detected deviations",
     "Order of priority"
