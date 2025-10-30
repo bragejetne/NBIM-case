@@ -32,7 +32,7 @@ You also have raw context with dates and amounts:
 
 Task:  
 Decide which discrepancy should be prioritized first: GAQ or TAX.  
-You must reason based mainly on recency, then financial impact and regulatory risk.
+You must reason based mainly on financial impact, then recency (time since it happened) and regulatory risk.
 Do not use fixed weights instead, explain your reasoning step by step.
 
 ---

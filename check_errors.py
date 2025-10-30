@@ -85,15 +85,14 @@ custody_hq = {col: df[col].tolist()}
 def check_gaq_errors():
     #Define lists for errors
     wrong_calulations_gaq = {}
-    
     nbim_vals = nbim_gaq['GROSS_AMOUNT_QUOTATION']
     custody_vals = custody_gaq['GROSS_AMOUNT']
 
     #Check if any GAQ are different
     unequal_row = []
     for i, (n, c) in enumerate(zip(nbim_vals, custody_vals), start=1):
-    
-        if n == c:
+        tolerance = n * 0.01  
+        if abs(n - c) <= tolerance:
             continue
         else:
             unequal_row.append(i)
@@ -110,8 +109,6 @@ def check_gaq_errors():
                 'event_date_nbim': nbim_exdate['EXDATE'][i-1]
 }
 
-
-
             if nbim_dps['DIVIDENDS_PER_SHARE'][i-1] * nbim_nb['NOMINAL_BASIS_NBIM'][i-1] != nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1]:
                 wrong_calulations_gaq[f'nbim_{i}'] = nbim_dps['DIVIDENDS_PER_SHARE'][i-1], nbim_nb['NOMINAL_BASIS_NBIM'][i-1], nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1]
             if custody_dps['DIV_RATE'][i-1] * custody_nb['NOMINAL_BASIS_CUSTODY'][i-1] != custody_gaq['GROSS_AMOUNT'][i-1]:
@@ -124,9 +121,11 @@ def check_tax_difference():
     nbim_vals = nbim_ttr['TOTAL_TAX_RATE']
     custody_vals = custody_tax_rate['TAX_RATE']
     unequal_tax_dict = {}
+    tolerance = 0.01
 
     for i, (n, c) in enumerate(zip(nbim_vals, custody_vals), start=1):
-        if n == c:
+        
+        if abs(n - c) < tolerance:
             continue
         else:
             unequal_tax_dict[f'nbim:_{i}'] = [f'tax rate {n}, row {i}']
