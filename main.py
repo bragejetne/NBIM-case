@@ -14,42 +14,61 @@ wrong_tax_applied = naq[0] if isinstance(naq, tuple) else (naq.get("wrong_tax_ap
 wrong_tax_calculation = naq[1] if isinstance(naq, tuple) else (naq.get("wrong_tax_calculation") if isinstance(naq, dict) else {})
 tax_difference = check_errors.check_tax_difference()[0] if isinstance(check_errors.check_tax_difference(), tuple) else check_errors.check_tax_difference()
 
-def _count_items(d):
+def _count_items(d, kind: str | None = None):
     if not d:
         return 0
+
+    # Spesialhåndtering for Tax rate differences (taxdiff):
+    if kind == "taxdiff":
+        if isinstance(d, dict):
+            if {"nbim", "custody"}.issubset(d.keys()):
+                return 1
+            # Nøstet per hendelse
+            if all(isinstance(v, dict) and {"nbim", "custody"}.issubset(v.keys()) for v in d.values()):
+                return len(d)
+        # Fallback: minst 1 hvis vi ikke forstår strukturen
+        return 1
     total = 0
-    for v in d.values():
-        if isinstance(v, list):
-            total += len(v)
-        elif isinstance(v, dict):
-            # f.eks. {'nbim': [...], 'custody': [...]}
-            if any(isinstance(x, list) for x in v.values()):
-                total += sum(len(x) if isinstance(x, list) else 1 for x in v.values())
+    if isinstance(d, dict):
+        for v in d.values():
+            if isinstance(v, list):
+                total += len(v)
+            elif isinstance(v, dict):
+                # f.eks. {'nbim': [...], 'custody': [...]}
+                if any(isinstance(x, list) for x in v.values()):
+                    total += sum(len(x) if isinstance(x, list) else 1 for x in v.values())
+                else:
+                    total += 1
             else:
                 total += 1
-        else:
-            total += 1
-    return total
+        return total
+
+    return len(d) if isinstance(d, (list, tuple, set)) else 1
+
 
 issues = []
 if gaq_error:
     issues.append({"key": "gaq", "title": "GAQ mismatches (Gross Amount Quotation)",
                    "subtitle": "Breaks in GAQ = DPS × Nominal", "count": _count_items(gaq_error)})
+
 if tax_difference:
     issues.append({"key": "taxdiff", "title": "Tax rate differences",
-                   "subtitle": "NBIM WHT rate ≠ Custody WHT rate", "count": _count_items(tax_difference)})
+                   "subtitle": "NBIM WHT rate ≠ Custody WHT rate", "count": _count_items(tax_difference, kind="taxdiff")})
+
 if wrong_tax_applied:
     issues.append({"key": "taxapplied", "title": "Wrong tax applied (NET ≠ GROSS − TAX)",
                    "subtitle": "Net amount does not reconcile to gross minus tax", "count": _count_items(wrong_tax_applied)})
+
 if wrong_tax_calculation:
     issues.append({"key": "taxcalc", "title": "Wrong tax calculation (TAX ≠ GROSS × rate)",
                    "subtitle": "Tax cost is not GAQ × rate", "count": _count_items(wrong_tax_calculation)})
 
+
 if not issues:
-    st.success("✅ No deviations found. All checks passed.")
+    st.success(" No deviations found. All checks passed.")
     st.stop()
 
-# --- 2) Precompute & cache alle agentrapporter ved sidelast -------------------
+# Cache alle agentrapporter ved sidelast 
 @st.cache_data(show_spinner=False, ttl=900)
 def _render_report(key: str) -> str:
     try:
@@ -65,10 +84,10 @@ def _render_report(key: str) -> str:
         return f"**Error while generating report:** {e}"
     return "No report."
 
-with st.spinner("Precomputing analyst reports..."):
+with st.spinner("Computing analyst reports..."):
     reports = {it["key"]: _render_report(it["key"]) for it in issues}
 
-# --- 3) UI: midtstilt meny og detalj uten nye API-kall -----------------------
+
 left, center, right = st.columns([1, 2, 1])
 with center:
     st.subheader("Detected deviations", divider="gray")
