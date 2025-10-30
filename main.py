@@ -9,7 +9,6 @@ st.set_page_config(page_title="Dividend Reconciliation Report", layout="wide")
 st.title("Dividend Reconciliation Analysis")
 st.caption("This dashboard shows deviations found between NBIM and Custody dividend bookings.")
 
-
 gaq_error = check_errors.check_gaq_errors()[0] if isinstance(check_errors.check_gaq_errors(), tuple) else check_errors.check_gaq_errors()
 tax_difference = check_errors.check_tax_difference()[0] if isinstance(check_errors.check_tax_difference(), tuple) else check_errors.check_tax_difference()
 

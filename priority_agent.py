@@ -37,7 +37,7 @@ Do not use fixed weights instead, explain your reasoning step by step.
 
 ---
 
-Output format (Markdown, similar style to the other agents):
+Output format(Markdown, similar style to the other agents):
 
 1. Short Summary  
 State clearly which discrepancy should be prioritized and why.
