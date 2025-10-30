@@ -53,7 +53,7 @@ if tax_difference:
                 "subtitle": "NBIM WHT rate ≠ Custody WHT rate", "count": _count_items(tax_difference, kind="taxdiff")})
 
 if not issues:
-    st.success(" No deviations found. All checks passed.")
+    st.success("No deviations found. All checks passed.")
     st.stop()
 
 # Cache alle agentrapporter ved sidelast 

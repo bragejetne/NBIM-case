@@ -13,7 +13,6 @@ tax_difference, related_dict = check_errors.check_tax_difference()
 
 
 def agent_gaq_feedback():
-    response_gaq = ''
 
     if gaq_error:
         response_gaq = gaq_estimation_client.messages.create(
@@ -33,17 +32,17 @@ The validation rule is: GAQ_expected = DPS_rate * Nominal_basis.
 Main task: use both dictionaries to find out what the root cause of the GAQ discrepancies are.
 
 TASK:
-1) **Break Detection**:
-   - For each item, compute GAQ_expected and compare to GAQ_reported.
-   - Confirm the difference (delta) and identify which side (NBIM or Custodian) is inconsistent.
+1) Break Detection:
+  For each item, compute GAQ_expected and compare to GAQ_reported.
+  Confirm the difference (delta) and identify which side (NBIM or Custodian) is inconsistent.
 
-2) **Automated Remediation Guidance**:
-   - Provide a short, precise explanation of why the discrepancy exists (e.g., unit mismatch, rounding error, wrong DPS).
-   - Suggest 1-3 concrete checks to resolve (prioritize deterministic checks such as unit scaling, rounding conventions, currency alignment).
-   - Assess severity of the discrepancy on a 1-10 scale:
-     - 1 = negligible (e.g., $1 difference),
-     - 10 = critical (e.g., ≥ $10,000,000 difference).
-   - Indicate whether this discrepancy should be escalated immediately or monitored.
+2) Automated Remediation Guidance:
+  - Provide a short, precise explanation of why the discrepancy exists (e.g., unit mismatch, rounding error, wrong DPS).
+  - Suggest 1-3 concrete checks to resolve (prioritize deterministic checks such as unit scaling, rounding conventions, currency alignment).
+  - Assess severity of the discrepancy on a 1-10 scale:
+  - 1 = negligible (e.g., $1 difference),
+  - 10 = critical (e.g., ≥ $10,000,000 difference).
+  - Indicate whether this discrepancy should be escalated immediately or monitored.
 
 OUTPUT (Markdown):
 - Short summary of how many GAQ breaks were found and their severity range.
@@ -55,18 +54,15 @@ CONSTRAINTS:
 - Do not invent rows or fields beyond the dict.
 - If a value is missing, write "N/A" and proceed.
 - Keep explanations concise, deterministic, and actionable.
-                """ }
+""" 
+                }
             ]
         )
-        
-    if response_gaq:
         return response_gaq.content[0].text
     
-
-
-
+  
 def agent_tax_difference_feedback():
-    response_tax = ''
+    # response_tax = ''
 
     if tax_difference:
 
@@ -99,11 +95,8 @@ CONSTRAINTS:
 - Keep text concise, deterministic, and operational.
 - Do not assert which side is correct unless the data proves it.
 """
-
 }
         ]
         )
-
-    if response_tax:
         return response_tax.content[0].text
 

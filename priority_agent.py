@@ -17,10 +17,11 @@ tax_difference, related_dict = check_errors.check_tax_difference()
 def agent_priority_feedback():
         response_priority = priority_agent.messages.create(
             model="claude-sonnet-4-5",
-            max_tokens=600,
+            max_tokens=750,
             messages=[
             {"role": "user",
             "content": f"""
+        GAQ means Gross Amount Quotation.
         You are a prioritization analyst. You are given two previous analyses:
 - GAQ_RESPONSE: {gaq_response}
 - TAX_RESPONSE: {tax_response}
@@ -31,12 +32,12 @@ You also have raw context with dates and amounts:
 
 Task:  
 Decide which discrepancy should be prioritized first: GAQ or TAX.  
-You must reason based on severity, financial impact, recency (when the incident happened), and regulatory risk.  
-Do not use fixed weights — instead, explain your reasoning step by step.
+You must reason based mainly on financial impact, then recency (when the incident happened) and regulatory risk.  
+Do not use fixed weights instead, explain your reasoning step by step.
 
 ---
 
-### Output format (Markdown, similar style to the other agents):
+Output format (Markdown, similar style to the other agents):
 
 1. Short Summary  
 State clearly which discrepancy should be prioritized and why.
@@ -53,7 +54,7 @@ A short list of recommended follow-ups: what to address immediately, what can be
 
 ---
 
-### Constraints
+Constraints
 - Write in English.  
 - Keep it concise, professional, and operational.  
 - If any value is missing, write `"N/A"`.  
