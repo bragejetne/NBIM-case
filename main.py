@@ -1,6 +1,8 @@
 import streamlit as st
 import check_errors
 import agent_evaluation as ae
+import priority_agent as pa
+
 
 st.set_page_config(page_title="Dividend Reconciliation Report", layout="wide")
 
@@ -9,9 +11,6 @@ st.caption("This dashboard shows deviations found between NBIM and Custody divid
 
 
 gaq_error = check_errors.check_gaq_errors()[0] if isinstance(check_errors.check_gaq_errors(), tuple) else check_errors.check_gaq_errors()
-naq = check_errors.check_naq_errors()
-wrong_tax_applied = naq[0] if isinstance(naq, tuple) else (naq.get("wrong_tax_applied") if isinstance(naq, dict) else {})
-wrong_tax_calculation = naq[1] if isinstance(naq, tuple) else (naq.get("wrong_tax_calculation") if isinstance(naq, dict) else {})
 tax_difference = check_errors.check_tax_difference()[0] if isinstance(check_errors.check_tax_difference(), tuple) else check_errors.check_tax_difference()
 
 def _count_items(d, kind: str | None = None):
@@ -55,15 +54,6 @@ if tax_difference:
     issues.append({"key": "taxdiff", "title": "Tax rate differences",
                    "subtitle": "NBIM WHT rate ≠ Custody WHT rate", "count": _count_items(tax_difference, kind="taxdiff")})
 
-if wrong_tax_applied:
-    issues.append({"key": "taxapplied", "title": "Wrong tax applied (NET ≠ GROSS − TAX)",
-                   "subtitle": "Net amount does not reconcile to gross minus tax", "count": _count_items(wrong_tax_applied)})
-
-if wrong_tax_calculation:
-    issues.append({"key": "taxcalc", "title": "Wrong tax calculation (TAX ≠ GROSS × rate)",
-                   "subtitle": "Tax cost is not GAQ × rate", "count": _count_items(wrong_tax_calculation)})
-
-
 if not issues:
     st.success(" No deviations found. All checks passed.")
     st.stop()
@@ -84,16 +74,33 @@ def _render_report(key: str) -> str:
         return f"**Error while generating report:** {e}"
     return "No report."
 
+@st.cache_data(show_spinner=False, ttl=900)
+def _render_priority_report() -> str:
+    return pa.agent_priority_feedback()
+
 with st.spinner("Computing analyst reports..."):
     reports = {it["key"]: _render_report(it["key"]) for it in issues}
 
 
-left, center, right = st.columns([1, 2, 1])
-with center:
+# Compute everything up-front so both views are instant
+with st.spinner("Computing analyst reports..."):
+    reports = {it["key"]: _render_report(it["key"]) for it in issues}
+with st.spinner("Computing priority..."):
+    priority_report = _render_priority_report()
+
+# Build readable labels
+labels = [f"{i['title']} • {i['count']} found" for i in issues]
+keys = [i["key"] for i in issues]
+
+# Home "menu" as tabs
+tab_detected, tab_priority = st.tabs([
+    "Detected deviations",
+    "Order of priority"
+])
+
+with tab_detected:
     st.subheader("Detected deviations", divider="gray")
 
-    labels = [f"{i['title']} • {i['count']} found" for i in issues]
-    keys = [i["key"] for i in issues]
     selection = st.radio(
         "Choose a deviation type to review",
         options=keys,
@@ -106,6 +113,8 @@ with center:
     sel = next(i for i in issues if i["key"] == selection)
     st.subheader(sel["title"])
     st.caption(sel["subtitle"])
-
-    # Hent ferdig generert rapport fra cache
     st.markdown(reports[selection], unsafe_allow_html=True)
+
+with tab_priority:
+    st.subheader("Order of priority", divider="gray")
+    st.markdown(priority_report, unsafe_allow_html=True)

@@ -6,6 +6,12 @@ custody_df = pd.read_csv("CUSTODY_Dividend_Bookings.csv", delimiter=";")
 df = nbim_df.merge(custody_df,how="inner", left_on="BANK_ACCOUNT", right_on="BANK_ACCOUNTS", suffixes=("_NBIM", "_CUSTODY"))
 
 #NBIM dicts
+col = 'EXDATE'
+nbim_exdate = {col: df[col].tolist()}
+
+col = 'PAYMENT_DATE'
+nbim_payment_date = {col: df[col].tolist()}
+
 col = 'GROSS_AMOUNT_QUOTATION'
 nbim_gaq = {col: df[col].tolist()}
 
@@ -46,6 +52,12 @@ col = 'LOCALTAX_COST_QUOTATION'
 nbim_ltc = {col: df[col].tolist()}
 
 # Custody dicts
+col = 'EVENT_EX_DATE'
+custody_exdate = {col: df[col].tolist()}
+
+col = 'EVENT_PAYMENT_DATE'
+custody_payment_date = {col: df[col].tolist()}
+
 col = 'GROSS_AMOUNT'
 custody_gaq = {col: df[col].tolist()}
 
@@ -94,7 +106,8 @@ def check_gaq_errors():
                 'implied_shares_custody': custody_gaq['GROSS_AMOUNT'][i-1] / custody_dps['DIV_RATE'][i-1] if custody_dps['DIV_RATE'][i-1] != 0 else 0,
                 'actual_shares_custody': custody_nb['NOMINAL_BASIS_CUSTODY'][i-1],
                 'actual_shares_nbim': nbim_nb['NOMINAL_BASIS_NBIM'][i-1],
-                'holding_quantity_custody': custody_hq['HOLDING_QUANTITY'][i-1]
+                'holding_quantity_custody': custody_hq['HOLDING_QUANTITY'][i-1],
+                'event_date_nbim': nbim_exdate['EXDATE'][i-1]
 }
 
 
@@ -128,51 +141,14 @@ def check_tax_difference():
             'wthtax_cost_quotation_nbim': nbim_tax_cost['WTHTAX_COST_QUOTATION'][i-1],
             'wthtax_rate_nbim': nbim_tax_rate['WTHTAX_RATE'][i-1],
             'net_amount_qoutation_nbim': nbim_net['NET_AMOUNT_QUOTATION'][i-1],
-            'net_amount_qoutation_custody': custody_net['NET_AMOUNT_QC'][i-1]
+            'net_amount_qoutation_custody': custody_net['NET_AMOUNT_QC'][i-1],
+            'event_ex_dat_nbime': nbim_exdate['EXDATE'][i-1]
             
 
 
 
         }
     return unequal_tax_dict, related_dict
-
-def check_naq_errors():
-    wrong_tax_calculation = {}
-    wrong_tax_applied = {}
-    nbim_vals = nbim_net['NET_AMOUNT_QUOTATION']
-    custody_vals = custody_net['NET_AMOUNT_QC']
-    unequal_row = []
-
-    for i, (n, c) in enumerate(zip(nbim_vals, custody_vals), start=1):
-        if n == c:
-            continue
-        else:
-            unequal_row.append(i)
-
-    if unequal_row:
-        tax_standardizer = 0.01
-        for i in unequal_row:
-
-            if nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1] * nbim_ttr['TOTAL_TAX_RATE'][i-1] * tax_standardizer != nbim_tax_cost['WTHTAX_COST_QUOTATION'][i-1]:
-                    wrong_tax_calculation[f'nbim_{i}'] = nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1], nbim_tax_rate['WTHTAX_RATE'][i-1], nbim_tax_cost['WTHTAX_COST_QUOTATION'][i-1]
-
-
-            if custody_gaq['GROSS_AMOUNT'][i-1] * custody_tax_rate['TAX_RATE'][i-1] * tax_standardizer != custody_tax['TAX'][i-1]:
-                    wrong_tax_calculation[f'custody_{i}'] = custody_gaq['GROSS_AMOUNT'][i-1], custody_tax_rate['TAX_RATE'][i-1], custody_tax['TAX'][i-1]
-        
-        for i in unequal_row:
-            
-            if nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1] - nbim_tax_cost['WTHTAX_COST_QUOTATION'][i-1] != nbim_net['NET_AMOUNT_QUOTATION'][i-1]:
-                    wrong_tax_applied[f'nbim_{i}'] = (f' Gross amount Quotation: {nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1]}'), (f'Tax cost quotation: {nbim_tax_cost['WTHTAX_COST_QUOTATION'][i-1]}'), (f' Net amount quotation: {nbim_net['NET_AMOUNT_QUOTATION'][i-1]}')
-
-
-            if custody_gaq['GROSS_AMOUNT'][i-1] - custody_tax['TAX'][i-1] != custody_net['NET_AMOUNT_QC'][i-1]:
-                    wrong_tax_applied[f'custody_{i}'] = custody_gaq['GROSS_AMOUNT'][i-1], custody_tax['TAX'][i-1], custody_net['NET_AMOUNT_QC'][i-1]
-
-    return wrong_tax_applied, wrong_tax_calculation
-    
-
-    
 
 
 

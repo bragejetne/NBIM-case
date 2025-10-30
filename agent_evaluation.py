@@ -8,14 +8,10 @@ from json import dumps
 
 load_dotenv()
 api_key = os.getenv("ANTHROPIC_API_KEY")
-#Loading agents
 gaq_estimation_client = Anthropic(api_key=api_key)
 tax_estimation_client = Anthropic(api_key=api_key)
-tax_applied_client = Anthropic(api_key=api_key)
-tax_calculation_client = Anthropic(api_key=api_key)
 
 gaq_error, statistics_dict = check_errors.check_gaq_errors()
-wrong_tax_applied, wrong_tax_calculation = check_errors.check_naq_errors()
 tax_difference, related_dict = check_errors.check_tax_difference()
 
 #Tools for agent
@@ -27,7 +23,7 @@ def agent_gaq_feedback():
     if gaq_error:
         response_gaq = gaq_estimation_client.messages.create(
             model="claude-sonnet-4-5",
-            max_tokens=300,
+            max_tokens=600,
             messages=[
             {"role": "user",
             "content": f"""
@@ -74,8 +70,6 @@ CONSTRAINTS:
 
 
 
-# If the research online takes more than one minute, stop the research and reply "i dont know"
-# tools = TAX_RESEARCH_TOOLS,
 def agent_tax_difference_feedback():
     response_tax = ''
 
@@ -83,7 +77,7 @@ def agent_tax_difference_feedback():
 
         response_tax = tax_estimation_client.messages.create(
             model="claude-sonnet-4-5",        
-            max_tokens=300,
+            max_tokens=600,
             
             messages=[
             {"role": "user",
@@ -118,91 +112,3 @@ CONSTRAINTS:
     if response_tax:
         return response_tax.content[0].text
 
-
-def agent_tax_applied_error_feedback():
-    response_tax_applied = None
-
-    if wrong_tax_applied:
-        response_tax_applied = tax_applied_client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=450,
-            temperature=0,
-            messages=[{
-                "role": "user",
-                "content": f"""
-    You are a reconciliation analyst. You are given only this dict of rows where NET appears inconsistent:
-    {wrong_tax_applied}
-
-    Meaning per entry (tuple):
-    (GROSS_amount, TAX_amount, NET_reported)
-    — rule: NET_expected = GROSS_amount - TAX_amount.
-
-    TASK:
-    1) For each item, compute NET_expected and compare to NET_reported.
-    2) State which side is incorrect (NBIM or Custodian).
-    3) Brief diagnosis and what to check next (fees, rounding, wrong sign, currency mix).
-    4) Assess the severity of the discrepancy on a scale from 1 to 10, where:
-       - 1 indicates a negligible discrepancy (e.g., $1 difference),
-       - 10 indicates a critical discrepancy (e.g., $10,000 or more).
-
-    OUTPUT (Markdown):
-    - Short summary.
-    - Table columns:
-    row_id | side | GROSS | TAX | NET_reported | NET_expected | delta | diagnosis | suggested_fix | severity
-
-    CONSTRAINTS:
-    - Do not add assumptions beyond the tuples.
-    - Prefer deterministic checks first; keep text concise.
-    """
-            }]
-        )
-
-    if response_tax_applied:
-        return response_tax_applied.content[0].text
-    
-
-
-# tools = TAX_RESEARCH_TOOLS
-def wrong_tax_calculated():
-    if wrong_tax_calculation:
-
-        response_tax = tax_calculation_client.messages.create(
-            model="claude-sonnet-4-5",        
-            max_tokens=500,
-            tools = TAX_RESEARCH_TOOLS,
-            messages=[
-            {"role": "user",
-            "content": f"""
-    You are a reconciliation analyst. You are given only this dict of suspected wrong tax calculations:
-    {wrong_tax_calculation}
-
-    Meaning per entry (tuple):
-    (GAQ_reported, TAX_rate_percent, TAX_cost_reported)
-    — rule: TAX_expected = GAQ_reported * (TAX_rate_percent/100).
-
-    TASK:
-    1) For each item, compute TAX_expected and compare with TAX_cost_reported.
-    2) State whether NBIM or Custodian miscalculated tax cost.
-    3) Provide a terse diagnosis and 1-3 probable root causes (rounding, percent vs decimal, ADR ratio, exempt/relief).
-    4) Assess the severity of the discrepancy on a scale from 1 to 10, where:
-       - 1 indicates a negligible discrepancy (e.g., $1 difference),
-       - 10 indicates a critical discrepancy (e.g., $10,000 or more).
-    5) Provide spreadsheet-ready instructions.
-
-    OUTPUT (Markdown):
-    - Short summary.
-    - Table columns:
-    row_id | side | GAQ | tax_rate_% | TAX_reported | TAX_expected | delta | diagnosis | suggested_fix | severity
-
-    CONSTRAINTS:
-    - Use only the provided dict; do not assume FX conversions unless stated.
-    - Keep each diagnosis within ~15 words.
-    """}
-        ]
-        )
-
-    if response_tax:
-        return response_tax.content[0].text
-    
-
-    
