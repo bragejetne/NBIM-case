@@ -133,6 +133,8 @@ def check_tax_difference():
             unequal_tax_dict[f'custody_{i}'] = [f'tax rate {c}, row {i}']
 
         related_dict = {
+            'implied_tax_amount_nbim': nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1] * nbim_tax_rate['WTHTAX_RATE'][i-1] / 100 + nbim_ltc['LOCALTAX_COST_QUOTATION'][i-1],
+            'implied_tax_amount_custody': custody_gaq['GROSS_AMOUNT'][i-1] * custody_tax_rate['TAX_RATE'][i-1] / 100,
             'organisation_name': nbim_org['ORGANISATION_NAME'][i-1],
             'quotation_currency_nbim': nbim_qc['QUOTATION_CURRENCY'][i-1],
             'nbim_gross_amount_quotation': nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1],
@@ -142,7 +144,10 @@ def check_tax_difference():
             'wthtax_rate_nbim': nbim_tax_rate['WTHTAX_RATE'][i-1],
             'net_amount_qoutation_nbim': nbim_net['NET_AMOUNT_QUOTATION'][i-1],
             'net_amount_qoutation_custody': custody_net['NET_AMOUNT_QC'][i-1],
-            'event_ex_dat_nbime': nbim_exdate['EXDATE'][i-1]
+            'event_ex_date_nbim': nbim_exdate['EXDATE'][i-1]
+            
+
+
             
 
 
