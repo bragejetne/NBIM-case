@@ -18,6 +18,9 @@ nbim_tax_cost = {col: df[col].tolist()}
 col = 'WTHTAX_RATE'
 nbim_tax_rate = {col: df[col].tolist()}
 
+col = 'ORGANISATION_NAME'
+nbim_org = {col: df[col].tolist()}
+
 col = 'GROSS_AMOUNT_QUOTATION'
 nbim_gaq = {col: df[col].tolist()}
 
@@ -32,9 +35,10 @@ nbim_nas = {col: df[col].tolist()}
 
 col = 'DIVIDENDS_PER_SHARE'
 nbim_dps = {col: df[col].tolist()}
+col = 'TOTAL_TAX_RATE'
+nbim_ttr = {col: df[col].tolist()}
 
 # Custody dicts
-
 col = 'GROSS_AMOUNT'
 custody_gaq = {col: df[col].tolist()}
 
@@ -56,10 +60,13 @@ custody_dps = {col: df[col].tolist()}
 col = 'NOMINAL_BASIS_CUSTODY'
 custody_nb = {col: df[col].tolist()}
 
+col = "HOLDING_QUANTITY"
+custody_hq = {col: df[col].tolist()}
+
 def check_gaq_errors():
     #Define lists for errors
     wrong_calulations_gaq = {}
-
+    
     nbim_vals = nbim_gaq['GROSS_AMOUNT_QUOTATION']
     custody_vals = custody_gaq['GROSS_AMOUNT']
 
@@ -74,17 +81,27 @@ def check_gaq_errors():
 
     if unequal_row:
         for i in unequal_row:
+            
+            statistics_dict = {
+                'implied_shares_nbim': nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1] / nbim_dps['DIVIDENDS_PER_SHARE'][i-1] if nbim_dps['DIVIDENDS_PER_SHARE'][i-1] != 0 else 0,
+                'implied_shares_custody': custody_gaq['GROSS_AMOUNT'][i-1] / custody_dps['DIV_RATE'][i-1] if custody_dps['DIV_RATE'][i-1] != 0 else 0,
+                'actual_shares_custody': custody_nb['NOMINAL_BASIS_CUSTODY'][i-1],
+                'actual_shares_nbim': nbim_nb['NOMINAL_BASIS_NBIM'][i-1],
+                'holding_quantity_custody': custody_hq['HOLDING_QUANTITY'][i-1]
+}
+
+
 
             if nbim_dps['DIVIDENDS_PER_SHARE'][i-1] * nbim_nb['NOMINAL_BASIS_NBIM'][i-1] != nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1]:
                 wrong_calulations_gaq[f'nbim_{i}'] = nbim_dps['DIVIDENDS_PER_SHARE'][i-1], nbim_nb['NOMINAL_BASIS_NBIM'][i-1], nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1]
             if custody_dps['DIV_RATE'][i-1] * custody_nb['NOMINAL_BASIS_CUSTODY'][i-1] != custody_gaq['GROSS_AMOUNT'][i-1]:
                 wrong_calulations_gaq[f'custody_{i}'] = (f'DPS rate: {custody_dps['DIV_RATE'][i-1]}'), (f'Nominal basis: {custody_nb['NOMINAL_BASIS_CUSTODY'][i-1]}'), (f'{custody_gaq['GROSS_AMOUNT'][i-1]}')
 
-    return wrong_calulations_gaq
+    return wrong_calulations_gaq, statistics_dict
 
 def check_tax_difference():
      
-    nbim_vals = nbim_tax_rate['WTHTAX_RATE']
+    nbim_vals = nbim_ttr['TOTAL_TAX_RATE']
     custody_vals = custody_tax_rate['TAX_RATE']
     unequal_tax_dict = {}
 
@@ -92,7 +109,7 @@ def check_tax_difference():
         if n == c:
             continue
         else:
-            unequal_tax_dict[f'nbim:_{i}'] = [f'tax rate {n}, row {i}']
+            unequal_tax_dict[f'nbim:_{i}'] = [f'tax rate {n}, row {i}, org {nbim_org['ORGANISATION_NAME'][i-1]}']
             unequal_tax_dict[f'custody_{i}'] = [f'tax rate {c}, row {i}']
     return unequal_tax_dict
 
@@ -113,7 +130,7 @@ def check_naq_errors():
         tax_standardizer = 0.01
         for i in unequal_row:
 
-            if nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1] * nbim_tax_rate['WTHTAX_RATE'][i-1] * tax_standardizer != nbim_tax_cost['WTHTAX_COST_QUOTATION'][i-1]:
+            if nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1] * nbim_ttr['TOTAL_TAX_RATE'][i-1] * tax_standardizer != nbim_tax_cost['WTHTAX_COST_QUOTATION'][i-1]:
                     wrong_tax_calculation[f'nbim_{i}'] = nbim_gaq['GROSS_AMOUNT_QUOTATION'][i-1], nbim_tax_rate['WTHTAX_RATE'][i-1], nbim_tax_cost['WTHTAX_COST_QUOTATION'][i-1]
 
 
