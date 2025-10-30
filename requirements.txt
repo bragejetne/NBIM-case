@@ -1,5 +1,5 @@
-streamlit
-pandas
-anthropic
-python-dotenv
+pandas>=2.2
+python-dotenv>=1.0
+streamlit>=1.39
+anthropic>=0.34
 numpy
