@@ -45,7 +45,7 @@ def _count_items(d, kind: str | None = None):
 issues = []
 if gaq_error:
     issues.append({"key": "gaq", "title": "GAQ mismatches (Gross Amount Quotation)",
-                "subtitle": "Breaks in GAQ = DPS × Nominal", "count": _count_items(gaq_error)})
+                "subtitle": "Breaks in GAQ = DPS x Nominal", "count": _count_items(gaq_error)})
 
 if tax_difference:
     issues.append({"key": "taxdiff", "title": "Tax rate differences",
